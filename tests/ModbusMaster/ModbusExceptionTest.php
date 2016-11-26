@@ -1,6 +1,9 @@
 <?php
 namespace Tests\ModbusMaster;
 
+use InvalidArgumentException;
+use PHPModbus\IOException;
+use PHPModbus\ModbusException;
 use PHPModbus\ModbusMaster;
 use PHPModbus\ModbusMasterTcp;
 
@@ -8,7 +11,7 @@ class ModbusExceptionTest extends MockServerTestCase
 {
     public function testThrowProtocolMismatchException()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage("Unknown socket protocol, should be 'TCP' or 'UDP'");
 
         $modbus = new ModbusMaster('127.0.0.1', 'Mismatch');
@@ -17,7 +20,7 @@ class ModbusExceptionTest extends MockServerTestCase
 
     public function testPortClosedException()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(IOException::class);
         $this->expectExceptionMessage('socket_connect() failed. Reason: ()No connection could be made because the target machine actively refused it.');
 
         $modbus = new ModbusMasterTcp('127.0.0.1');
@@ -27,7 +30,7 @@ class ModbusExceptionTest extends MockServerTestCase
 
     public function testTimeoutException()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(\RuntimeException::class);
 
         $mockResponse = '89130000000400010101'; // respond with 1 byte (00000001 bits set) [1]
         static::executeWithMockServer($mockResponse, function ($port) {
@@ -45,7 +48,7 @@ class ModbusExceptionTest extends MockServerTestCase
 
     public function testThrowIllegalDataValueException()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(ModbusException::class);
         $this->expectExceptionMessage('Modbus response error code: 3 (ILLEGAL DATA VALUE)');
 
         $mockResponse = 'da8700000003008303'; // respond with 1 WORD (2 bytes) [0, 3]

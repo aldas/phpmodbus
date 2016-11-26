@@ -3,6 +3,7 @@
 namespace PHPModbus;
 
 use Exception;
+use InvalidArgumentException;
 
 /**
  * Phpmodbus Copyright (c) 2004, 2013 Jan Krakora
@@ -193,13 +194,13 @@ class ModbusMaster
             // UDP socket
             $this->sock = socket_create(AF_INET, SOCK_DGRAM, SOL_UDP);
         } else {
-            throw new Exception("Unknown socket protocol, should be 'TCP' or 'UDP'");
+            throw new InvalidArgumentException("Unknown socket protocol, should be 'TCP' or 'UDP'");
         }
         // Bind the client socket to a specific local port
         if (strlen($this->client) > 0) {
             $result = socket_bind($this->sock, $this->client, $this->client_port);
             if ($result === false) {
-                throw new Exception(
+                throw new IOException(
                     "socket_bind() failed. Reason: ($result)" .
                     socket_strerror(socket_last_error($this->sock))
                 );
@@ -215,7 +216,7 @@ class ModbusMaster
         // Connect the socket
         $result = @socket_connect($this->sock, $this->host, $this->port);
         if ($result === false) {
-            throw new Exception(
+            throw new IOException(
                 "socket_connect() failed. Reason: ($result)" .
                 socket_strerror(socket_last_error($this->sock))
             );
@@ -349,7 +350,7 @@ class ModbusMaster
             } else {
                 $timeSpentWaiting = microtime(true) - $lastAccess;
                 if ($timeSpentWaiting >= $totalReadTimeout) {
-                    throw new Exception(
+                    throw new IOException(
                         "Watchdog time expired [ $totalReadTimeout sec ]!!! " .
                         "Connection to $this->host:$this->port is not established."
                     );
@@ -435,7 +436,7 @@ class ModbusMaster
                 $failure_str = 'UNDEFINED FAILURE CODE';
             }
             // exception response
-            throw new Exception("Modbus response error code: $failure_code ($failure_str)");
+            throw new ModbusException("Modbus response error code: $failure_code ($failure_str)");
         } else {
             $this->status .= "Modbus response error code: NOERROR\n";
             return true;
