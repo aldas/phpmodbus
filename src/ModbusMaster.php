@@ -179,7 +179,7 @@ class ModbusMaster
      */
     private function printPacket($packet)
     {
-        return 'Packet: ' . unpack('H*', $packet)[1] . "\n";
+        return 'packet: ' . unpack('H*', $packet)[1] . "\n";
     }
 
     /**
@@ -480,11 +480,12 @@ class ModbusMaster
             $socket->connect();
 
             $packet = $buildRequest();
+            $this->status .= 'Sending ' . $this->printPacket($packet);
             $socket->send($packet);
 
             $data = $socket->receive();
 
-            $this->status .= $this->printPacket($data);
+            $this->status .= 'Received ' . $this->printPacket($data);
 
             $this->validateResponseCode($data);
             return $parseResponse($data);
