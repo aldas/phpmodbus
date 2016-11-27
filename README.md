@@ -2,11 +2,11 @@
 
 Implementation of the basic functionality of the Modbus TCP and UDP based protocol using PHP. 
 
-**NOTE: This is a fork to fix & update the library code (and code alone). Notably, the tests are probably all broken.**
+**NOTE: This is a fork to fix & update the library code (and code alone).**
 
 > **What's new**
 > 
-> This fork adds a namespace and fixes issues encountered when porting to PHP 7
+> This fork adds a namespace and fixes issues encountered when porting to PHP 7, fixes old MS Windows specific tests
 
 
 ## Implemented features
@@ -26,6 +26,7 @@ Implementation of the basic functionality of the Modbus TCP and UDP based protoc
 ## Requirements
 
  * The PHP extension php_sockets.dll should be enabled (server php.ini file)
+ * PHP 5.5+
 
  
 ## Example
@@ -53,6 +54,15 @@ Use the `setTimeout($seconds)` and `setSocketTimeout($read_timeout_sec, $write_t
 
 Most of the code is (to some extent) commented and documented with PhpDoc. You should get useful tooltips in your IDE.
 
+## Tests
+
+To run the test suite, you need install the dependencies via composer, then
+run PHPUnit. 
+
+NB: PHP 5.6+ is required for tests
+
+    composer install
+    vendor/bin/phpunit
 
 ## GoogleCode legacy docs & downloads
 

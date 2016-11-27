@@ -23,7 +23,7 @@ abstract class MockServerTestCase extends TestCase
                 $clientData[] = $output;
             });
 
-            if ('WIN' !== strtoupper(substr(PHP_OS, 0, 3))) {
+            if (strpos(PHP_OS, 'WIN') === false) {
                 // wait to spin up. needed for linux. unnessecary on Windows 10.
                 // Ugly but even with 150ms sleep test run faster on Linux
                 usleep(150000);
