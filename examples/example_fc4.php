@@ -1,4 +1,6 @@
 <?php
+require __DIR__ . '/../vendor/autoload.php';
+
 use PHPModbus\ModbusMasterUdp;
 
 $ip = filter_var($_GET['ip'], FILTER_VALIDATE_IP) ? $_GET['ip'] : '192.192.15.51';
