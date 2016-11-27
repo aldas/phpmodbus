@@ -150,14 +150,15 @@ class ModbusSocket
             $read = array($this->streamSocket);
             $write = null;
             $except = null;
+            $data = '';
             if (false !== stream_select($read, $write, $except, $readTimeout['sec'], $readTimeout['usec'])) {
                 $this->statusMessages[] = 'Wait data ... ';
 
                 if (in_array($this->streamSocket, $read, false)) {
-                    $data = fread($this->streamSocket, 2048); // read max 2048 bytes
+                    $data .= fread($this->streamSocket, 2048); // read max 2048 bytes
                     if (!empty($data)) {
                         $this->statusMessages[] = 'Data received';
-                        return $data; //FIXME what if we are waiting for more than that?
+                        return $data;
                     }
                     $lastAccess = microtime(true);
                 } else {
