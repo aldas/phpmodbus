@@ -77,13 +77,17 @@ class ModbusMaster
      */
     public $timeout_sec = 5;
     /**
+     * @var float Socket connect timeout (seconds, decimals allowed)
+     */
+    public $socket_connect_timeout_sec = 1;
+    /**
      * @var float Socket read timeout (seconds, decimals allowed)
      */
-    public $socket_read_timeout_sec = 0.3;
+    public $socket_read_timeout_sec = 0.3; // 300 ms
     /**
      * @var float Socket write timeout (seconds, decimals allowed)
      */
-    public $socket_write_timeout_sec = 1; // 300 ms
+    public $socket_write_timeout_sec = 1;
     /**
      * @var int Endianness codding (0 = little endian = 0, 1 = big endian)
      */
@@ -470,6 +474,7 @@ class ModbusMaster
                 ->setTimeoutSec($this->timeout_sec)
                 ->setSocketReadTimeoutSec($this->socket_read_timeout_sec)
                 ->setSocketWriteTimeoutSec($this->socket_write_timeout_sec)
+                ->setSocketConnectTimeoutSec($this->socket_connect_timeout_sec)
                 ->build();
 
             $socket->connect();

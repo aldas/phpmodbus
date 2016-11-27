@@ -34,13 +34,17 @@ class ModbusSocket
      */
     protected $timeout_sec = 5;
     /**
+     * @var float Socket connect timeout (seconds, decimals allowed)
+     */
+    protected $socket_connect_timeout_sec = 1;
+    /**
      * @var float Socket read timeout (seconds, decimals allowed)
      */
-    protected $socket_read_timeout_sec = 0.3;
+    protected $socket_read_timeout_sec = 0.3; // 300 ms
     /**
      * @var float Socket write timeout (seconds, decimals allowed)
      */
-    protected $socket_write_timeout_sec = 1; // 300 ms
+    protected $socket_write_timeout_sec = 1;
     /**
      * @var string Socket protocol (TCP, UDP)
      */
@@ -56,13 +60,14 @@ class ModbusSocket
     /**
      * @var resource Communication socket
      */
-    protected $sock;
+    private $streamSocket;
     /**
      * @var array status messages
      */
     protected $statusMessages = [];
 
-    public static function getBuilder() {
+    public static function getBuilder()
+    {
         return new ModbusSocketBuilder();
     }
 
@@ -77,44 +82,54 @@ class ModbusSocket
      */
     public function connect()
     {
-        // Create a protocol specific socket
-        if ($this->socket_protocol === 'TCP') {
-            // TCP socket
-            $this->sock = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
-        } elseif ($this->socket_protocol === 'UDP') {
-            // UDP socket
-            $this->sock = socket_create(AF_INET, SOCK_DGRAM, SOL_UDP);
-        } else {
-            throw new InvalidArgumentException("Unknown socket protocol, should be 'TCP' or 'UDP'");
+        $protocol = null;
+        switch ($this->socket_protocol) {
+            case 'TCP':
+            case 'UDP':
+                $protocol = strtolower($this->socket_protocol);
+                break;
+            default:
+                throw new InvalidArgumentException("Unknown socket protocol, should be 'TCP' or 'UDP'");
         }
-        // Bind the client socket to a specific local port
+
+        $opts = [];
         if (strlen($this->client) > 0) {
-            $result = socket_bind($this->sock, $this->client, $this->client_port);
-            if ($result === false) {
-                throw new IOException(
-                    "socket_bind() failed. Reason: ($result)" .
-                    socket_strerror(socket_last_error($this->sock))
-                );
-            } else {
-                $this->statusMessages[] = 'Bound';
-            }
-        }
-
-        // Socket settings (send/write timeout)
-        $writeTimeout = $this->secsToSecUsecArray($this->socket_write_timeout_sec);
-        socket_set_option($this->sock, SOL_SOCKET, SO_SNDTIMEO, $writeTimeout);
-
-        // Connect the socket
-        $result = @socket_connect($this->sock, $this->host, $this->port);
-        if ($result === false) {
-            throw new IOException(
-                "socket_connect() failed. Reason: ($result)" .
-                socket_strerror(socket_last_error($this->sock))
+            // Bind the client stream to a specific local port
+            $opts = array(
+                'socket' => array(
+                    'bindto' => "{$this->client}:{$this->client_port}",
+                ),
             );
-        } else {
-            $this->statusMessages[] = 'Connected';
-            return true;
         }
+        $context = stream_context_create($opts);
+
+        $this->streamSocket = @stream_socket_client(
+            "$protocol://$this->host:$this->port",
+            $errno,
+            $errstr,
+            $this->socket_connect_timeout_sec,
+            STREAM_CLIENT_CONNECT,
+            $context
+        );
+
+        if (false === $this->streamSocket) {
+            $message = "Unable to create client socket to {$protocol}://{$this->host}:{$this->port}: {$errstr}";
+            throw new IOException($message, $errno);
+        }
+
+        if (strlen($this->client) > 0) {
+            $this->statusMessages[] = 'Bound';
+        }
+        $this->statusMessages[] = 'Connected';
+
+        stream_set_blocking($this->streamSocket, false); // use non-blocking stream
+
+        $writeTimeoutParts = $this->secsToSecUsecArray($this->socket_write_timeout_sec);
+        // set as stream timeout as we use 'stream_select' to read data and this method has its own timeout
+        // this call will only affect our fwrite parts (send data method)
+        stream_set_timeout($this->streamSocket, $writeTimeoutParts['sec'], $writeTimeoutParts['usec']);
+
+        return true;
     }
 
     /**
@@ -127,35 +142,37 @@ class ModbusSocket
      */
     public function receive()
     {
-        socket_set_nonblock($this->sock);
-        $readsocks[] = $this->sock;
-        $writesocks = null;
-        $exceptsocks = null;
-        $rec = '';
         $totalReadTimeout = $this->timeout_sec;
         $lastAccess = microtime(true);
-        $readTout = $this->secsToSecUsecArray($this->socket_read_timeout_sec);
 
-        while (false !== socket_select($readsocks, $writesocks, $exceptsocks, $readTout['sec'], $readTout['usec'])) {
-            $this->statusMessages[] = 'Wait data ... ';
-            if (in_array($this->sock, $readsocks, false)) {
-                if (@socket_recv($this->sock, $rec, 2000, 0)) { // read max 2000 bytes
-                    $this->statusMessages[] = 'Data received';
-                    return $rec;
+        $readTimeout = $this->secsToSecUsecArray($this->socket_read_timeout_sec);
+        while (true) {
+            $read = array($this->streamSocket);
+            $write = null;
+            $except = null;
+            if (false !== stream_select($read, $write, $except, $readTimeout['sec'], $readTimeout['usec'])) {
+                $this->statusMessages[] = 'Wait data ... ';
+
+                if (in_array($this->streamSocket, $read, false)) {
+                    $data = fread($this->streamSocket, 2048); // read max 2048 bytes
+                    if (!empty($data)) {
+                        $this->statusMessages[] = 'Data received';
+                        return $data; //FIXME what if we are waiting for more than that?
+                    }
+                    $lastAccess = microtime(true);
+                } else {
+                    $timeSpentWaiting = microtime(true) - $lastAccess;
+                    if ($timeSpentWaiting >= $totalReadTimeout) {
+                        throw new IOException(
+                            "Watchdog time expired [ {$totalReadTimeout} sec ]!!! " .
+                            "Connection to {$this->host}:{$this->port} is not established."
+                        );
+                    }
                 }
-                $lastAccess = microtime(true);
             } else {
-                $timeSpentWaiting = microtime(true) - $lastAccess;
-                if ($timeSpentWaiting >= $totalReadTimeout) {
-                    throw new IOException(
-                        "Watchdog time expired [ $totalReadTimeout sec ]!!! " .
-                        "Connection to $this->host:$this->port is not established."
-                    );
-                }
+                throw new IOException("Failed to read data from {$this->host}:{$this->port}.");
             }
-            $readsocks[] = $this->sock;
         }
-
         return null;
     }
 
@@ -168,7 +185,7 @@ class ModbusSocket
      */
     public function send($packet)
     {
-        socket_write($this->sock, $packet, strlen($packet));
+        fwrite($this->streamSocket, $packet, strlen($packet));
         $this->statusMessages[] = 'Send';
     }
 
@@ -179,8 +196,8 @@ class ModbusSocket
      */
     public function close()
     {
-        if (is_resource($this->sock)) {
-            socket_close($this->sock);
+        if (is_resource($this->streamSocket)) {
+            fclose($this->streamSocket);
             $this->statusMessages[] = 'Disconnected';
         }
     }
@@ -319,6 +336,16 @@ class ModbusSocketBuilder extends ModbusSocket
     public function setPort($port)
     {
         $this->modbusSocket->port = $port;
+        return $this;
+    }
+
+    /**
+     * @param float $socket_connect_timeout_sec
+     * @return ModbusSocketBuilder
+     */
+    public function setSocketConnectTimeoutSec($socket_connect_timeout_sec)
+    {
+        $this->modbusSocket->socket_connect_timeout_sec = $socket_connect_timeout_sec;
         return $this;
     }
 

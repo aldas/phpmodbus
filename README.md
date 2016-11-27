@@ -2,11 +2,13 @@
 
 Implementation of the basic functionality of the Modbus TCP and UDP based protocol using PHP. 
 
-**NOTE: This is a fork to fix & update the library code (and code alone).**
+**NOTE: This is a fork to fix & update the library code.**
 
-> **What's new**
-> 
-> This fork adds a namespace and fixes issues encountered when porting to PHP 7, fixes old MS Windows specific tests
+##What's new
+
+* This fork adds a namespace and fixes issues encountered when porting to PHP 7
+* Removes dependency to [sockets extension](http://at2.php.net/manual/en/book.sockets.php). Now uses built-in [Stream API](http://www.php.net/manual/en/function.stream-socket-client.php)
+* Fixes/replaces old MS Windows specific tests
 
 
 ## Implemented features
@@ -25,7 +27,6 @@ Implementation of the basic functionality of the Modbus TCP and UDP based protoc
 
 ## Requirements
 
- * The PHP extension php_sockets.dll should be enabled (server php.ini file)
  * PHP 5.5+
 
  
