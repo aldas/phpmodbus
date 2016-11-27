@@ -7,7 +7,7 @@ Implementation of the basic functionality of the Modbus TCP and UDP based protoc
 ##What's new
 
 * This fork adds a namespace and fixes issues encountered when porting to PHP 7
-* Removes dependency to [sockets extension](http://at2.php.net/manual/en/book.sockets.php). Now uses built-in [Stream API](http://www.php.net/manual/en/function.stream-socket-client.php)
+* Removes dependency to [sockets extension](http://www.php.net/manual/en/book.sockets.php). Now uses built-in [Stream API](http://www.php.net/manual/en/function.stream-socket-client.php)
 * Fixes/replaces old MS Windows specific tests
 
 
@@ -63,7 +63,11 @@ run PHPUnit.
 NB: PHP 5.6+ is required for tests
 
     composer install
-    vendor/bin/phpunit
+    composer test
+    
+To report test coverage (created inside ./report/html):
+
+    composer test-coverage
 
 ## GoogleCode legacy docs & downloads
 
