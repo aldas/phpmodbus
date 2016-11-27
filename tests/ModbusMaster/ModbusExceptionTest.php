@@ -21,7 +21,7 @@ class ModbusExceptionTest extends MockServerTestCase
     public function testPortClosedException()
     {
         $this->expectException(IOException::class);
-        $this->expectExceptionMessage('socket_connect() failed. Reason: ()No connection could be made because the target machine actively refused it.');
+        $this->expectExceptionMessage('socket_connect() failed. Reason:');
 
         $modbus = new ModbusMasterTcp('127.0.0.1');
         $modbus->setSocketTimeout(0.2, 0.2);
