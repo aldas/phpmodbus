@@ -7,7 +7,7 @@ use PHPUnit_Framework_TestCase;
 
 class Bytes2Real extends PHPUnit_Framework_TestCase
 {
-    const DATA = [
+    private $data = [
         0 => 0,
         1 => 0,
         2 => 68,
@@ -24,8 +24,8 @@ class Bytes2Real extends PHPUnit_Framework_TestCase
 
     public function testByte2Real()
     {
-        $this->assertEquals(1000, PhpType::bytes2float(array_slice(self::DATA, 0, 4)));
-        $this->assertEquals(2000, PhpType::bytes2float(array_slice(self::DATA, 4, 4)));
-        $this->assertEquals(1.25, PhpType::bytes2float(array_slice(self::DATA, 8, 4)));
+        $this->assertEquals(1000, PhpType::bytes2float(array_slice($this->data, 0, 4)));
+        $this->assertEquals(2000, PhpType::bytes2float(array_slice($this->data, 4, 4)));
+        $this->assertEquals(1.25, PhpType::bytes2float(array_slice($this->data, 8, 4)));
     }
 }

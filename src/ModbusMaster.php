@@ -3,6 +3,7 @@
 namespace PHPModbus;
 
 use Exception;
+use PHPModbus\Network\ModbusConnection;
 use PHPModbus\Packet\MaskWriteRegisterPacket;
 use PHPModbus\Packet\ReadCoilsPacket;
 use PHPModbus\Packet\ReadInputDiscretesPacket;
@@ -464,35 +465,43 @@ class ModbusMaster
 
     public function sendAndReceive(callable $buildRequest, callable $parseResponse)
     {
-        try {
-            $socket = ModbusSocket::getBuilder()
-                ->setHost($this->host)
-                ->setPort($this->port)
-                ->setSocketProtocol($this->socket_protocol)
-                ->setClient($this->client)
-                ->setClientPort($this->client_port)
-                ->setTimeoutSec($this->timeout_sec)
-                ->setSocketReadTimeoutSec($this->socket_read_timeout_sec)
-                ->setSocketWriteTimeoutSec($this->socket_write_timeout_sec)
-                ->setSocketConnectTimeoutSec($this->socket_connect_timeout_sec)
-                ->build();
+        $connection = ModbusConnection::getBuilder()
+            ->setHost($this->host)
+            ->setPort($this->port)
+            ->setProtocol($this->socket_protocol)
+            ->setClient($this->client)
+            ->setClientPort($this->client_port)
+            ->setTimeoutSec($this->timeout_sec)
+            ->setReadTimeoutSec($this->socket_read_timeout_sec)
+            ->setWriteTimeoutSec($this->socket_write_timeout_sec)
+            ->setConnectTimeoutSec($this->socket_connect_timeout_sec)
+            ->build();
 
-            $socket->connect();
+        try {
+            $connection->connect();
 
             $packet = $buildRequest();
             $this->status .= 'Sending ' . $this->printPacket($packet);
-            $socket->send($packet);
+            $connection->send($packet);
 
-            $data = $socket->receive();
+            $data = $connection->receive();
 
             $this->status .= 'Received ' . $this->printPacket($data);
 
             $this->validateResponseCode($data);
+
+            $this->closeConnection($connection);
             return $parseResponse($data);
-        } finally {
-            $this->status .= implode("\n", $socket->getStatusMessages());
-            $socket->close();
+        } catch (Exception $e) {
+            $this->closeConnection($connection);
+            throw $e;
         }
+    }
+
+    private function closeConnection(ModbusConnection $connection)
+    {
+        $this->status .= implode("\n", $connection->getStatusMessages());
+        $connection->close();
     }
 
     /**

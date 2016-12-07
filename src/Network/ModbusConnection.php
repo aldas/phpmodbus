@@ -12,51 +12,12 @@
  * @package   Phpmodbus
  * @version   $id$
  */
-
-namespace PHPModbus;
-
+namespace PHPModbus\Network;
 
 use InvalidArgumentException;
 
-
-class ModbusSocket
+class ModbusConnection extends ModbusConnectionProperties
 {
-    /**
-     * @var string (optional) client IP address when binding client
-     */
-    protected $client = '';
-    /**
-     * @var string client port set when binding client to local ip&port
-     */
-    protected $client_port = 502;
-    /**
-     * @var float Total response timeout (seconds, decimals allowed)
-     */
-    protected $timeout_sec = 5;
-    /**
-     * @var float Socket connect timeout (seconds, decimals allowed)
-     */
-    protected $socket_connect_timeout_sec = 1;
-    /**
-     * @var float Socket read timeout (seconds, decimals allowed)
-     */
-    protected $socket_read_timeout_sec = 0.3; // 300 ms
-    /**
-     * @var float Socket write timeout (seconds, decimals allowed)
-     */
-    protected $socket_write_timeout_sec = 1;
-    /**
-     * @var string Socket protocol (TCP, UDP)
-     */
-    protected $socket_protocol = 'UDP';
-    /**
-     * @var string Modbus device IP address
-     */
-    protected $host = '192.168.1.1';
-    /**
-     * @var string gateway port
-     */
-    protected $port = 502;
     /**
      * @var resource Communication socket
      */
@@ -66,9 +27,23 @@ class ModbusSocket
      */
     protected $statusMessages = [];
 
+
+    public function __construct(ModbusConnectionBuilder $builder)
+    {
+        $this->host = $builder->getHost();
+        $this->port = $builder->getPort();
+        $this->client = $builder->getClient();
+        $this->clientPort = $builder->getClientPort();
+        $this->timeoutSec = $builder->getTimeoutSec();
+        $this->connectTimeoutSec = $builder->getConnectTimeoutSec();
+        $this->readTimeoutSec = $builder->getReadTimeoutSec();
+        $this->writeTimeoutSec = $builder->getWriteTimeoutSec();
+        $this->protocol = $builder->getProtocol();
+    }
+
     public static function getBuilder()
     {
-        return new ModbusSocketBuilder();
+        return new ModbusConnectionBuilder();
     }
 
     /**
@@ -78,15 +53,15 @@ class ModbusSocket
      *
      * @return bool
      * @throws \InvalidArgumentException
-     * @throws \PHPModbus\IOException
+     * @throws \PHPModbus\Network\IOException
      */
     public function connect()
     {
         $protocol = null;
-        switch ($this->socket_protocol) {
+        switch ($this->protocol) {
             case 'TCP':
             case 'UDP':
-                $protocol = strtolower($this->socket_protocol);
+                $protocol = strtolower($this->protocol);
                 break;
             default:
                 throw new InvalidArgumentException("Unknown socket protocol, should be 'TCP' or 'UDP'");
@@ -97,7 +72,7 @@ class ModbusSocket
             // Bind the client stream to a specific local port
             $opts = array(
                 'socket' => array(
-                    'bindto' => "{$this->client}:{$this->client_port}",
+                    'bindto' => "{$this->client}:{$this->clientPort}",
                 ),
             );
         }
@@ -107,7 +82,7 @@ class ModbusSocket
             "$protocol://$this->host:$this->port",
             $errno,
             $errstr,
-            $this->socket_connect_timeout_sec,
+            $this->connectTimeoutSec,
             STREAM_CLIENT_CONNECT,
             $context
         );
@@ -124,7 +99,7 @@ class ModbusSocket
 
         stream_set_blocking($this->streamSocket, false); // use non-blocking stream
 
-        $writeTimeoutParts = $this->secsToSecUsecArray($this->socket_write_timeout_sec);
+        $writeTimeoutParts = $this->secsToSecUsecArray($this->writeTimeoutSec);
         // set as stream timeout as we use 'stream_select' to read data and this method has its own timeout
         // this call will only affect our fwrite parts (send data method)
         stream_set_timeout($this->streamSocket, $writeTimeoutParts['sec'], $writeTimeoutParts['usec']);
@@ -142,10 +117,10 @@ class ModbusSocket
      */
     public function receive()
     {
-        $totalReadTimeout = $this->timeout_sec;
+        $totalReadTimeout = $this->timeoutSec;
         $lastAccess = microtime(true);
 
-        $readTimeout = $this->secsToSecUsecArray($this->socket_read_timeout_sec);
+        $readTimeout = $this->secsToSecUsecArray($this->readTimeoutSec);
         while (true) {
             $read = array($this->streamSocket);
             $write = null;
@@ -234,120 +209,4 @@ class ModbusSocket
     {
         return $this->statusMessages;
     }
-
-}
-
-
-class ModbusSocketBuilder extends ModbusSocket
-{
-    /**
-     * @var ModbusSocket instance to be built
-     */
-    private $modbusSocket;
-
-    public function __construct()
-    {
-        $this->modbusSocket = new ModbusSocket();
-    }
-
-    /**
-     * Return built instance of ModbusSocket
-     *
-     * @return ModbusSocket built instance
-     */
-    public function build()
-    {
-        return $this->modbusSocket;
-    }
-
-    /**
-     * @param string $client
-     * @return ModbusSocketBuilder
-     */
-    public function setClient($client)
-    {
-        $this->modbusSocket->client = $client;
-        return $this;
-    }
-
-    /**
-     * @param string $client_port
-     * @return ModbusSocketBuilder
-     */
-    public function setClientPort($client_port)
-    {
-        $this->modbusSocket->client_port = $client_port;
-        return $this;
-    }
-
-    /**
-     * @param float $timeout_sec
-     * @return ModbusSocketBuilder
-     */
-    public function setTimeoutSec($timeout_sec)
-    {
-        $this->modbusSocket->timeout_sec = $timeout_sec;
-        return $this;
-    }
-
-    /**
-     * @param float $socket_read_timeout_sec
-     * @return ModbusSocketBuilder
-     */
-    public function setSocketReadTimeoutSec($socket_read_timeout_sec)
-    {
-        $this->modbusSocket->socket_read_timeout_sec = $socket_read_timeout_sec;
-        return $this;
-    }
-
-    /**
-     * @param float $socket_write_timeout_sec
-     * @return ModbusSocketBuilder
-     */
-    public function setSocketWriteTimeoutSec($socket_write_timeout_sec)
-    {
-        $this->modbusSocket->socket_write_timeout_sec = $socket_write_timeout_sec;
-        return $this;
-    }
-
-    /**
-     * @param string $socket_protocol
-     * @return ModbusSocketBuilder
-     */
-    public function setSocketProtocol($socket_protocol)
-    {
-        $this->modbusSocket->socket_protocol = $socket_protocol;
-        return $this;
-    }
-
-    /**
-     * @param string $host
-     * @return ModbusSocketBuilder
-     */
-    public function setHost($host)
-    {
-        $this->modbusSocket->host = $host;
-        return $this;
-    }
-
-    /**
-     * @param string $port
-     * @return ModbusSocketBuilder
-     */
-    public function setPort($port)
-    {
-        $this->modbusSocket->port = $port;
-        return $this;
-    }
-
-    /**
-     * @param float $socket_connect_timeout_sec
-     * @return ModbusSocketBuilder
-     */
-    public function setSocketConnectTimeoutSec($socket_connect_timeout_sec)
-    {
-        $this->modbusSocket->socket_connect_timeout_sec = $socket_connect_timeout_sec;
-        return $this;
-    }
-
 }
