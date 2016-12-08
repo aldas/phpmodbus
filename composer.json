@@ -4,7 +4,7 @@
   "description": "PhpModbus with namespaces and updated to PHP 7",
   "license": "LGPL",
   "require": {
-    "php": "^5.5 || ^7.0",
+    "php": "^5.4 || ^7.0",
     "ext-sockets": "*"
   },
   "require-dev": {

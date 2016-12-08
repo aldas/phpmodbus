@@ -13,7 +13,7 @@ class UdpFc1ReadCoilsTest extends MockServerTestCase
             $modbus = new ModbusMasterUdp('127.0.0.1');
             $modbus->port = $port;
 
-            usleep(50000); // no idea how to fix this. wait for server to "warm" up or modbus UDP socket will timeout. does not occur with TCP
+            usleep(150000); // no idea how to fix this. wait for server to "warm" up or modbus UDP socket will timeout. does not occur with TCP
             $this->assertEquals([1], $modbus->readCoils(0, 256, 1));
         }, 'UDP');
 
