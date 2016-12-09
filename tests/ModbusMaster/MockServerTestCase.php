@@ -23,6 +23,11 @@ abstract class MockServerTestCase extends TestCase
                 $clientData[] = $output;
             });
 
+            if (strpos(PHP_OS, 'WIN') === false || getenv('MOCKSERVER_TIMEOUT_USEC') !== false) {
+                // wait to spin up. needed for linux. unnessecary on Windows 10.
+                // Ugly but even with 150ms sleep test run faster on Linux
+                usleep(getenv('MOCKSERVER_TIMEOUT_USEC') ?: 150000);
+            }
             $closure($port);
         });
 

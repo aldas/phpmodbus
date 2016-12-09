@@ -6,7 +6,7 @@ use PHPUnit\Framework\TestCase;
 
 class Bytes2String extends TestCase
 {
-    const DATA = [ // String "Hello word!"
+    private $data = [ // String "Hello word!"
         0x48, //H
         0x65, //e
         0x6c, //l
@@ -26,7 +26,7 @@ class Bytes2String extends TestCase
 
     public function testBytesToString()
     {
-        $this->assertEquals('eHll oowlr!da', PhpType::bytes2string(self::DATA));
-        $this->assertEquals('Hello world!', PhpType::bytes2string(self::DATA, true));
+        $this->assertEquals('eHll oowlr!da', PhpType::bytes2string($this->data));
+        $this->assertEquals('Hello world!', PhpType::bytes2string($this->data, true));
     }
 }

@@ -6,22 +6,26 @@ use PHPUnit\Framework\TestCase;
 
 class PhpTypeArrayExceptionWithTextArrayTest extends TestCase
 {
-    const DATA = [
+    private $data = [
         "0" => 100, // 32098 (DINT)
         "1" => "e",
         "2" => 0,
         "3" => 0
     ];
 
+    /**
+     * @expectedException \Exception
+     */
     public function testExceptionWhenSize2ContainsString()
     {
-        $this->expectException(\Exception::class);
-        PhpType::bytes2unsignedInt(array_slice(self::DATA, 0, 2));
+        PhpType::bytes2unsignedInt(array_slice($this->data, 0, 2));
     }
 
+    /**
+     * @expectedException \Exception
+     */
     public function testExceptionWhenSize4ContainsString()
     {
-        $this->expectException(\Exception::class);
-        PhpType::bytes2unsignedInt(array_slice(self::DATA, 0, 4));
+        PhpType::bytes2unsignedInt(array_slice($this->data, 0, 4));
     }
 }

@@ -6,7 +6,7 @@ use PHPUnit\Framework\TestCase;
 
 class PhpTypeBytes2Mixed extends TestCase
 {
-    const DATA = [
+    private $data = [
         "0" => 125, // 32098 (DINT)
         "1" => 98,
         "2" => 0,
@@ -31,15 +31,15 @@ class PhpTypeBytes2Mixed extends TestCase
 
     public function testUnsignedInt()
     {
-        $this->assertEquals(32098, PhpType::bytes2unsignedInt(array_slice(self::DATA, 0, 4)));
+        $this->assertEquals(32098, PhpType::bytes2unsignedInt(array_slice($this->data, 0, 4)));
     }
 
     public function testSignedInt()
     {
-        $this->assertEquals(0, PhpType::bytes2signedInt(array_slice(self::DATA, 4, 4)));
-        $this->assertEquals(0, PhpType::bytes2signedInt(array_slice(self::DATA, 8, 4)));
-        $this->assertEquals(-1, PhpType::bytes2signedInt(array_slice(self::DATA, 12, 4)));
-        $this->assertEquals(-25000, PhpType::bytes2signedInt(array_slice(self::DATA, 16, 2)));
-        $this->assertEquals(25000, PhpType::bytes2signedInt(array_slice(self::DATA, 18, 2)));
+        $this->assertEquals(0, PhpType::bytes2signedInt(array_slice($this->data, 4, 4)));
+        $this->assertEquals(0, PhpType::bytes2signedInt(array_slice($this->data, 8, 4)));
+        $this->assertEquals(-1, PhpType::bytes2signedInt(array_slice($this->data, 12, 4)));
+        $this->assertEquals(-25000, PhpType::bytes2signedInt(array_slice($this->data, 16, 2)));
+        $this->assertEquals(25000, PhpType::bytes2signedInt(array_slice($this->data, 18, 2)));
     }
 }

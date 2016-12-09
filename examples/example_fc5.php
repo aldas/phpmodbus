@@ -1,10 +1,10 @@
 <?php
+require __DIR__ . '/../vendor/autoload.php';
+
 use PHPModbus\ModbusMasterUdp;
 
-$ip = filter_var($_GET['ip'], FILTER_VALIDATE_IP) ? $_GET['ip'] : '192.192.15.51';
-$unitId = ((int)$_GET['unitid']) ?: 0;
-$reference = ((int)$_GET['reference']) ?: 12288;
-$value = ((bool)$_GET['value']) ?: false;
+require_once __DIR__ . '/request_input_data.php'; // 'ip', 'unitid','reference','quantity' are read from $_GET
+$value = isset($_GET['value']) ? ((bool)$_GET['value']) : false;
 
 $modbus = new ModbusMasterUdp($ip);
 

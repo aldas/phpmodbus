@@ -32,5 +32,10 @@
     "psr-4": {
       "Tests\\": "tests/"
     }
+  },
+  "scripts": {
+    "test": "vendor/bin/phpunit",
+    "test-ci": "vendor/bin/phpunit --coverage-clover report/coverage.xml",
+    "test-coverage": "vendor/bin/phpunit --coverage-html report/html"
   }
 }

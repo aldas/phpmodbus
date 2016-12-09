@@ -1,12 +1,10 @@
 <?php
+require __DIR__ . '/../vendor/autoload.php';
 
 use PHPModbus\ModbusMaster;
 use PHPModbus\PhpType;
 
-$ip = filter_var($_GET['ip'], FILTER_VALIDATE_IP) ? $_GET['ip'] : '192.192.15.51';
-$unitId = ((int)$_GET['unitid']) ?: 0;
-$reference = ((int)$_GET['reference']) ?: 12288;
-$quantity = ((int)$_GET['quantity']) ?: 6;
+require_once __DIR__ . '/request_input_data.php'; // 'ip', 'unitid','reference','quantity' are read from $_GET
 
 $modbus = new ModbusMaster($ip, 'UDP');
 
@@ -52,9 +50,9 @@ try {
     for ($i = 0, $max = count($recData); $i < $max; $i += 2) {
         ?>
         <tr>
-            <td><?php echo $reference+($i/2) ?></td>
-            <td><?php echo PhpType::bytes2signedInt([$recData[$i], $recData[$i+1]]) ?></td>
-            <td><?php echo PhpType::bytes2unsignedInt([$recData[$i], $recData[$i+1]]) ?></td>
+            <td><?php echo $reference + ($i / 2) ?></td>
+            <td><?php echo PhpType::bytes2signedInt([$recData[$i], $recData[$i + 1]]) ?></td>
+            <td><?php echo PhpType::bytes2unsignedInt([$recData[$i], $recData[$i + 1]]) ?></td>
             <td><?php echo $recData[$i] ?></td>
             <td><?php echo $recData[$i + 1] ?></td>
             <td><?php echo sprintf("%08d", decbin($recData[$i])) ?></td>
