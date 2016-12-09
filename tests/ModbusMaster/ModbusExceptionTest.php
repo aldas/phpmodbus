@@ -19,7 +19,7 @@ class ModbusExceptionTest extends MockServerTestCase
 
     /**
      * @expectedException \Exception
-     * @expectedExceptionMessage socket_connect() failed. Reason: ()No connection could be made because the target machine actively refused it
+     * @expectedExceptionMessage socket_connect() failed. Reason: ()
      */
     public function testPortClosedException()
     {
