@@ -1,4 +1,4 @@
-# phpmodbus
+# phpmodbus with native php-streams instead of ext-sockets
 
 Implementation of the basic functionality of the Modbus TCP and UDP based protocol using PHP. 
 
