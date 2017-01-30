@@ -1,9 +1,14 @@
 <?php
+require __DIR__ . '/../vendor/autoload.php';
 
-require_once dirname(__FILE__) . '/../Phpmodbus/ModbusMaster.php';
+use PHPModbus\ModbusMasterUdp;
 
-// Create Modbus object
-$modbus = new ModbusMaster("192.192.15.51", "UDP");
+$ip = filter_var($_GET['ip'], FILTER_VALIDATE_IP) ? $_GET['ip'] : '192.192.15.51';
+$unitId = ((int)$_GET['unitid']) ?: 0;
+$reference = ((int)$_GET['reference']) ?: 12288;
+$quantity = ((int)$_GET['quantity']) ?: 6;
+
+$modbus = new ModbusMasterUdp($ip);
 
 // Data to be writen
 $data = array(10, -1000, 2000, 3.0);
@@ -11,21 +16,17 @@ $dataTypes = array("WORD", "INT", "DINT", "REAL");
 
 try {
     // FC23
-    $recData = $modbus->readWriteRegisters(0, 12288, 6, 12288, $data, $dataTypes);
-}
-catch (Exception $e) {
+    $recData = $modbus->readWriteRegisters($unitId, $reference, $quantity, $reference, $data, $dataTypes);
+} catch (Exception $e) {
     // Print error information if any
     echo $modbus;
     echo $e;
     exit;
 }
 
-// Print status information
-echo "</br>Status:</br>" . $modbus;
-
-// Print read data
-echo "</br>Data:</br>";
+echo '<h1>Status</h1><pre>';
+print_r($modbus);
+echo '</pre>';
+echo '<h1>Data</h1><pre>';
 print_r($recData);
-echo "</br>";
-
-?>
+echo '</pre>';
